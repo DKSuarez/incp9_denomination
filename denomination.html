@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Denomination Slip</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --key-bg: #ffffff;
+            --active-row: #fff9c4;
+        }
+
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 60px; /* Default padding for collapsed state */
+            transition: padding-bottom 0.3s ease;
+        }
+
+        body.keypad-open { padding-bottom: 360px; }
+
+        header {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .table-container { width: 95%; max-width: 500px; margin-top: 20px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        th {
+            background: #233b54;
+            color: #f1f1f1;
+            font-size: 20px;
+            text-transform: uppercase;
+            padding: 12px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #f1f1f1;
+            font-size: 20px;
+
+            
+        }
+
+
+        .denom-label { font-weight: bold; color: var(--primary); font-size: 1.1rem; }
+
+        input {
+            width: 80px; padding: 10px; border: 2px solid #ddd; border-radius: 8px;
+            text-align: center; font-size: 18px; font-weight: bold;
+            color: var(--primary); background: #fafafa; pointer-events: none; 
+        }
+
+        .active-row { background-color: var(--active-row); }
+        .active-row input { border-color: var(--secondary); background: white; }
+
+        .row-total { font-family: monospace; font-weight: bold; color: var(--success); font-size: 1.1rem; }
+        .summary-row { background: var(--primary); color: white; font-weight: bold; }
+
+        /* Fixed Keypad Wrapper */
+        .keypad-wrapper {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #d2d6dc;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+            transform: translateY(100%); /* Start hidden */
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .keypad-wrapper.visible { transform: translateY(0); }
+
+        /* Show Keypad Button (Floating) */
+        #show-keypad-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 400px; }
+
+        .btn {
+            height: 55px; border: none; border-radius: 8px; font-size: 20px; font-weight: bold;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 3px 0 #adb5bd; background: var(--key-bg); color: #333;
+        }
+
+        .btn:active { transform: translateY(2px); box-shadow: none; }
+        .btn-ac { background: var(--danger); color: white; box-shadow: 0 3px 0 #a93226; font-size: 16px; }
+        .btn-nav { background: #4b5563; color: white; box-shadow: 0 3px 0 #1f2937; }
+        .btn-next { background: var(--secondary); color: white; box-shadow: 0 3px 0 #2980b9; font-size: 16px; }
+        .btn-hide { background: #95a5a6; color: white; box-shadow: 0 3px 0 #7f8c8d; }
+    </style>
+</head>
+<body class="keypad-open">
+
+<header>
+    <h1>DENOMINATION SLIP</h1>
+</header>
+
+<div class="table-container">
+    <table id="counterTable">
+        <thead>
+            <tr>
+                <th>Halaga</th>
+                <th>Bilang</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="row" data-val="1000" data-isbill="true">
+                <td class="denom-label">1,000</td>
+                <td><input type="text" value="0" readonly></td>
+                <td class="row-total">0</td>
+            </tr>
+            <tr class="row" data-val="500" data-isbill="true">
+                <td class="denom-label">500</td>
+                <td><input type="text" value="0" readonly></td>
+                <td class="row-total">0</td>
+            </tr>
+            <tr class="row" data-val="200" data-isbill="true">
+                <td class="denom-label">200</td>
+                <td><input type="text" value="0" readonly></td>
+                <td class="row-total">0</td>
+            </tr>
+            <tr class="row" data-val="100" data-isbill="true">
+                <td class="denom-label">100</td>
+                <td><input type="text" value="0" readonly></td>
+                <td class="row-total">0</td>
+            </tr>
+            <tr class="row" data-val="50" data-isbill="true">
+                <td class="denom-label">50</td>
+                <td><input type="text" value="0" readonly></td>
+                <td class="row-total">0</td>
+            </tr>
+            <tr class="row" data-val="20" data-isbill="true">
+                <td class="denom-label">20</td>
+                <td><input type="text" value="0" readonly></td>
+                <td class="row-total">0</td>
+            </tr>
+            <tr class="row" data-val="1" data-isbill="false">
+                <td class="denom-label">Coins</td>
+                <td><input type="text" value="0" readonly></td>
+                <td class="row-total">0</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr class="summary-row">
+                <td>Kabuuang Halaga</td>
+                <td></td>
+                <td><span id="grandSum">0</span></td>
+            </tr>      
+            <tr class="summary-row">
+                <td>Bilang ng Bills </td>
+                <td><span id="billSum">0</span></td>
+                <td><span 
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<button id="show-keypad-btn" onclick="toggleKeypad(true)" style="display: none;">⌨</button>
+
+<div id="keypadWrapper" class="keypad-wrapper visible">
+    <div class="numpad">
+        <button class="btn btn-hide" onclick="toggleKeypad(false)">HIDE</button>
+        <button class="btn btn-nav" onclick="move(-1)">▲</button>       
+        <button class="btn btn-next" onclick="move(1)">▼</button>
+
+        <button class="btn" onclick="numPress(7)">7</button>
+        <button class="btn" onclick="numPress(8)">8</button>
+        <button class="btn" onclick="numPress(9)">9</button>
+        
+        <button class="btn" onclick="numPress(4)">4</button>
+        <button class="btn" onclick="numPress(5)">5</button>
+        <button class="btn" onclick="numPress(6)">6</button>
+        
+        <button class="btn" onclick="numPress(1)">1</button>
+        <button class="btn" onclick="numPress(2)">2</button>
+        <button class="btn" onclick="numPress(3)">3</button>
+
+        <button class="btn" onclick="numPress('C')">C</button>  
+        <button class="btn" onclick="numPress(0)">0</button>
+        <button class="btn btn-ac" onclick="actionAC()">AC</button>
+    </div>
+</div>
+
+<script>
+    let currentIndex = 0;
+    const rows = document.querySelectorAll('.row');
+    const inputs = document.querySelectorAll('input');
+    const wrapper = document.getElementById('keypadWrapper');
+    const showBtn = document.getElementById('show-keypad-btn');
+
+    function init() {
+        updateActiveRow();
+        rows.forEach((row, index) => {
+            row.onclick = () => {
+                currentIndex = index;
+                updateActiveRow();
+                toggleKeypad(true); // Auto-show if a row is clicked
+            };
+        });
+    }
+
+    function toggleKeypad(show) {
+        if (show) {
+            wrapper.classList.add('visible');
+            showBtn.style.display = 'none';
+            document.body.classList.add('keypad-open');
+        } else {
+            wrapper.classList.remove('visible');
+            showBtn.style.display = 'flex';
+            document.body.classList.remove('keypad-open');
+        }
+    }
+
+    function updateActiveRow() {
+        rows.forEach(r => r.classList.remove('active-row'));
+        rows[currentIndex].classList.add('active-row');
+        rows[currentIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function numPress(val) {
+        let input = inputs[currentIndex];
+        if (val === 'C') input.value = "0";
+        else if (val === 'B') input.value = input.value.slice(0, -1) || "0";
+        else input.value = (input.value === "0") ? val : input.value + val;
+        calculate();
+    }
+
+    function move(step) {
+        currentIndex = (currentIndex + step + rows.length) % rows.length;
+        updateActiveRow();
+    }
+
+    function actionAC() {
+        inputs.forEach(i => i.value = "0");
+        currentIndex = 0;
+        updateActiveRow();
+        calculate();
+    }
+
+    function calculate() {
+        let totalAmount = 0, totalBills = 0;
+        rows.forEach(row => {
+            const denom = parseInt(row.dataset.val);
+            const qty = parseInt(row.querySelector('input').value) || 0;
+            const rowSum = denom * qty;
+            row.querySelector('.row-total').innerText = rowSum.toLocaleString();
+            totalAmount += rowSum;
+            if (row.dataset.isbill === "true") totalBills += qty;
+        });
+        document.getElementById('billSum').innerText = totalBills.toLocaleString();
+        document.getElementById('grandSum').innerText = totalAmount.toLocaleString();
+    }
+
+    init();
+</script>
+</body>
+</html>
